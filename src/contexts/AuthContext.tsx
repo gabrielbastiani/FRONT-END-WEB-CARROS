@@ -32,7 +32,7 @@ export const AuthContext = createContext({} as AuthContextData);
 export function AuthProvider({ children }: AuthProviderProps) {
 
     const [cookies, setCookie, removeCookie] = useCookies(['@webcarros.token']);
-    const [user, setAdmin] = useState<UserProps>();
+    const [user, setUser] = useState<UserProps>();
     const isAuthenticated = !!user;
 
     async function signIn({ email, password }: SignInProps) {
@@ -64,7 +64,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     useEffect(() => {
 
-        const token = cookies['@webcarros.token'];
+        let token = cookies['@webcarros.token'];
 
         if (token) {
 
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
                 const { id, name, email } = response.data;
 
-                setAdmin({
+                setUser({
                     id,
                     name,
                     email

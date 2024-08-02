@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 
 function signOut() {
     try {
-        const remove_cookie_user = new Cookies();
+        let remove_cookie_user = new Cookies();
         remove_cookie_user.remove('@webcarros.token', { path: '/' });
         toast.success('Usuario deslogado com sucesso!');
     } catch (error) {
@@ -14,8 +14,8 @@ function signOut() {
 
 export function setupAPIClient() {
 
-    const cookie_user = new Cookies();
-    const cookies = cookie_user.get('@webcarros.token');
+    let cookie_user = new Cookies();
+    let cookies = cookie_user.get('@webcarros.token');
 
     const api = axios.create({
         baseURL: 'http://localhost:3333',

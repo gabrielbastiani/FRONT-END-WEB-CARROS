@@ -1,10 +1,13 @@
-import { Link } from 'react-router-dom'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { Link, useNavigate } from 'react-router-dom'
 import logoImg from '../../assets/logo.svg'
 import { Container } from '../../components/container'
 import { Input } from '../../components/input'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useContext } from 'react'
+import { AuthContext } from '../../contexts/AuthContext'
 
 const schema = z.object({
     email: z.string().email("Insira um email válido").nonempty("O campo email é obrigatório"),
@@ -14,13 +17,33 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export function Login() {
+
+    const navigate = useNavigate();
+    const { signIn } = useContext(AuthContext);
+
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(schema),
         mode: "onChange"
     });
 
-    function onSubmit(data: FormData) {
-        console.log(data)
+    async function onSubmit(data: FormData) {
+        const email = data?.email;
+        const password = data?.password;
+        try {
+            let dataUser = {
+                email,
+                password
+            };
+
+            console.log(dataUser)
+
+            /* @ts-ignore */
+            await signIn(dataUser);
+
+            navigate('/dashboard');
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     return (

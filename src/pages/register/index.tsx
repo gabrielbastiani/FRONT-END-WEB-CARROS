@@ -26,7 +26,6 @@ export function Register() {
     });
 
     async function onSubmit(data: FormData) {
-        console.log(data)
         try {
             const apiClient = setupAPIClient();
             await apiClient.post('/create_user', { name: data?.name, email: data?.email, password: data?.password });
