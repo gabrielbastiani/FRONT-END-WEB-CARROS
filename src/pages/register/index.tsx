@@ -1,10 +1,12 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import logoImg from '../../assets/logo.svg'
 import { Container } from '../../components/container'
 import { Input } from '../../components/input'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { setupAPIClient } from '../../services/api'
+import { toast } from 'react-toastify'
 
 const schema = z.object({
     name: z.string().nonempty("O campo nome é obrigatório"),
@@ -15,13 +17,27 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export function Register() {
+
+    const navigate = useNavigate();
+    
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(schema),
         mode: "onChange"
     });
 
-    function onSubmit(data: FormData) {
+    async function onSubmit(data: FormData) {
         console.log(data)
+        try {
+            const apiClient = setupAPIClient();
+            await apiClient.post('/create_user', { name: data?.name, email: data?.email, password: data?.password });
+
+            toast.success('Cadastro feito com sucesso!');
+            navigate('/login');
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        } catch (error) {/* @ts-ignore */
+            console.log(error.response.data);
+            toast.error('Erro ao cadastrar!');
+        }
     }
 
     return (
@@ -80,7 +96,7 @@ export function Register() {
                 <Link to="/login">
                     Já possui uma conta? Faça o login!
                 </Link>
-                
+
             </div>
         </Container>
     )
