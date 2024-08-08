@@ -8,7 +8,8 @@ import { useCookies } from 'react-cookie';
 type AuthContextData = {
     user?: UserProps;
     isAuthenticated: boolean;
-    signIn: (credentials: SignInProps) => Promise<void>;
+    loadingAuth?: boolean;
+    signIn: (credentials: SignInProps) => Promise<boolean>;
     signOut: () => void;
 }
 
@@ -32,19 +33,27 @@ export const AuthContext = createContext({} as AuthContextData);
 export function AuthProvider({ children }: AuthProviderProps) {
 
     const [cookies, setCookie, removeCookie] = useCookies(['@webcarros.token']);
+    const [cookiesId, setCookieId, removeCookieId] = useCookies(['@idUser']);
     const [user, setUser] = useState<UserProps>();
+    const [loadingAuth, setLoadingAuth] = useState<boolean>(true);
     const isAuthenticated = !!user;
 
-    async function signIn({ email, password }: SignInProps) {
+
+    async function signIn({ email, password }: SignInProps): Promise<boolean> {
         try {
             const response = await api.post('/session', {
                 email,
                 password
             });
 
-            const { token } = response.data;
+            const { id, token } = response.data;
 
             setCookie('@webcarros.token', token, {
+                maxAge: 60 * 60 * 24 * 30,
+                path: "/"
+            });
+
+            setCookieId('@idUser', id, {
                 maxAge: 60 * 60 * 24 * 30,
                 path: "/"
             });
@@ -54,21 +63,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             toast.success('Logado com sucesso!');
 
+            setUser({ id, name: response.data.name, email });
+
+            return true;
+
         } catch (err) {
             toast.error("Erro ao acessar, confirmou seu cadastro em seu email?");
             /* @ts-ignore */
             toast.error(`${err.response.data.error}`);
             console.log("Erro ao acessar, confirmou seu cadastro em seu email? ", err);
+            return false;
         }
     }
 
     useEffect(() => {
 
         let token = cookies['@webcarros.token'];
+        let userid = cookiesId['@idUser'];
+
+        setLoadingAuth(true);
 
         if (token) {
 
-            api.get(`/me?user_id=${token}`).then(response => {
+            api.get(`/me?user_id=${userid}`).then(response => {
 
                 const { id, name, email } = response.data;
 
@@ -76,17 +93,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     id,
                     name,
                     email
-                })
+                });
+
+                setLoadingAuth(false);
 
             });
 
         }
 
-    }, [cookies]);
+    }, [cookies, cookiesId]);
 
     function signOut() {
         try {
             removeCookie('@webcarros.token', { path: '/' });
+            removeCookieId('@idUser', { path: '/' });
             toast.success('Usuario deslogado com sucesso!');
             return redirect('/login');
         } catch (error) {
@@ -95,7 +115,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated, signIn, signOut }}>
+        <AuthContext.Provider value={{ user, isAuthenticated, loadingAuth, signIn, signOut }}>
             {children}
         </AuthContext.Provider>
     )

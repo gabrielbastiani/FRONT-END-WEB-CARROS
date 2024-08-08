@@ -35,12 +35,12 @@ export function Login() {
                 password
             };
 
-            console.log(dataUser)
+            const success = await signIn(dataUser);
+            
+            if (success) {
+                navigate('/dashboard');
+            }
 
-            /* @ts-ignore */
-            await signIn(dataUser);
-
-            navigate('/dashboard');
         } catch (error) {
             console.error(error);
         }
