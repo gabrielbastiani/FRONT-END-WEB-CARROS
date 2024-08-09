@@ -6,7 +6,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 
 export function Header() {
 
-    const { isAuthenticated, signOut, loadingAuth } = useContext(AuthContext);
+    const { isAuthenticated, loadingAuth } = useContext(AuthContext);
 
     return (
         <div className='w-full flex items-center justify-center h-16 bg-white drop-shadow mb-4'>
@@ -21,15 +21,17 @@ export function Header() {
                 {!loadingAuth && isAuthenticated && (
                     <Link to="/dashboard">
                         <div className='border-2 rounded-full p-1 border-gray-900'>
-                            <FiUser size={24} color="#000" />
+                            <FiUser cursor="pointer" size={24} color="#000" />
                         </div>
                     </Link>
                 )}
 
                 {!loadingAuth && !isAuthenticated && (
-                    <div className='border-2 rounded-full p-1 border-gray-900'>
-                        <FiLogIn size={24} color="#000" onClick={() => signOut()} />
-                    </div>
+                    <Link to="/login">
+                        <div className="border-2 rounded-full p-1 border-gray-900">
+                            <FiLogIn size={22} color="#000" />
+                        </div>
+                    </Link>
                 )}
             </header>
         </div>

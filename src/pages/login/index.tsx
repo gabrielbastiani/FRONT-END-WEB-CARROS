@@ -38,7 +38,7 @@ export function Login() {
             const success = await signIn(dataUser);
             
             if (success) {
-                navigate('/dashboard');
+                navigate('/dashboard', { replace: true });
             }
 
         } catch (error) {

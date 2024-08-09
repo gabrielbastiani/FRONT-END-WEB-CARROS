@@ -2,7 +2,6 @@
 import { createContext, ReactNode, useState, useEffect } from 'react';
 import { api } from '../services/apiClient';
 import { toast } from 'react-toastify';
-import { redirect } from 'react-router-dom';
 import { useCookies } from 'react-cookie';
 
 type AuthContextData = {
@@ -40,6 +39,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 
     async function signIn({ email, password }: SignInProps): Promise<boolean> {
+        setLoadingAuth(true);
         try {
             const response = await api.post('/session', {
                 email,
@@ -58,7 +58,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 path: "/"
             });
 
-            //Passar para proximas requisiçoes o nosso token
             api.defaults.headers['Authorization'] = `Bearer ${token}`;
 
             toast.success('Logado com sucesso!');
@@ -73,42 +72,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
             toast.error(`${err.response.data.error}`);
             console.log("Erro ao acessar, confirmou seu cadastro em seu email? ", err);
             return false;
+        } finally {
+            setLoadingAuth(false);
         }
     }
 
     useEffect(() => {
-
         let token = cookies['@webcarros.token'];
         let userid = cookiesId['@idUser'];
 
-        setLoadingAuth(true);
+        async function loadUserData() {
+            if (token) {
+                try {
+                    const response = await api.get(`/me?user_id=${userid}`);
 
-        if (token) {
+                    const { id, name, email } = response.data;
 
-            api.get(`/me?user_id=${userid}`).then(response => {
+                    setUser({
+                        id,
+                        name,
+                        email
+                    });
 
-                const { id, name, email } = response.data;
+                } catch (error) {
+                    console.error("Erro ao carregar dados do usuário: ", error);
+                }
+            }
 
-                setUser({
-                    id,
-                    name,
-                    email
-                });
-
-                setLoadingAuth(false);
-
-            });
-
+            setLoadingAuth(false);
         }
 
+        loadUserData();
     }, [cookies, cookiesId]);
 
     function signOut() {
         try {
             removeCookie('@webcarros.token', { path: '/' });
             removeCookieId('@idUser', { path: '/' });
-            toast.success('Usuario deslogado com sucesso!');
-            return redirect('/login');
+            setUser(undefined);
+            toast.success('Usuário deslogado com sucesso!');
         } catch (error) {
             toast.error("OPS... Erro ao deslogar");
         }

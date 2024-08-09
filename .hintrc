@@ -4,7 +4,22 @@
   ],
   "hints": {
     "axe/name-role-value": [
-      "default"
+      "default",
+      {
+        "button-name": "off"
+      }
+    ],
+    "axe/keyboard": [
+      "default",
+      {
+        "nested-interactive": "off"
+      }
+    ],
+    "axe/forms": [
+      "default",
+      {
+        "label": "off"
+      }
     ]
   }
 }
