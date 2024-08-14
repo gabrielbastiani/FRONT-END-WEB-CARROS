@@ -1,12 +1,13 @@
-import { FiUpload } from "react-icons/fi";
+import { ChangeEvent, useState } from "react";
+import { FiTrash, FiUpload } from "react-icons/fi";
 import { Container } from "../../../components/container";
 import { DashboardHeader } from "../../../components/painelheader";
 import { useForm } from "react-hook-form";
 import { Input } from "../../../components/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useContext } from "react";
-import { AuthContext } from "../../../contexts/AuthContext";
+import { toast } from "react-toastify";
+import { setupAPIClient } from "../../../services/api";
 
 const schema = z.object({
     name: z.string().nonempty("O campo nome é obrigatório"),
@@ -25,56 +26,98 @@ type FormData = z.infer<typeof schema>;
 
 export function New() {
 
-    const { user } = useContext(AuthContext);
+    const [productPhotos, setProductPhotos] = useState<File[]>([]);
+    const [photoInsertUrl, setPhotoInsertUrl] = useState<string[]>([]);
+
     const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>({
         resolver: zodResolver(schema),
         mode: "onChange"
     });
 
-    function onSubmit(data: FormData) {
+    function handleFile(e: ChangeEvent<HTMLInputElement>) {
+        if (e.target.files) {
+            const selectedFiles = Array.from(e.target.files);
 
-        console.log(data)
+            const validFiles = selectedFiles.filter(file =>
+                file.type === 'image/jpeg' || file.type === 'image/png'
+            );
 
-        /* if (carImages.length === 0) {
-            toast.error("Envie pelo menos 1 imagem!")
+            if (validFiles.length === 0) {
+                toast.error("Envie imagens no formato JPEG ou PNG!");
+                return;
+            }
+
+            setProductPhotos(validFiles);
+            setPhotoInsertUrl(validFiles.map(file => URL.createObjectURL(file)));
+        }
+    }
+
+    async function onSubmit(date: FormData) {
+
+        if (productPhotos.length === 0) {
+            toast.error('Carregue pelo menos uma imagem!');
+            console.log("Carregue pelo menos uma imagem!");
             return;
         }
 
-        const carListImages = carImages.map(car => {
-            return {
-                uid: car.uid,
-                name: car.name,
-                url: car.url
+        if (productPhotos.length > 15) {
+            toast.error('É possivel cadastrar no máximo 15 imagens por carro');
+            console.log("É possivel cadastrar no máximo 15 imagens por carro");
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+
+            productPhotos.forEach(photo => {
+                formData.append('files', photo);
+            });
+
+            formData.append('name', date?.name);
+            formData.append('model_car', date?.model);
+            formData.append('year_car', date?.year);
+            formData.append('km_car', date?.km);
+            formData.append('whatsapp', date?.whatsapp);
+            formData.append('city', date?.city);
+            formData.append('price_car', date?.price);
+            formData.append('description_car', date?.description);
+
+            const apiClient = setupAPIClient();
+            await apiClient.post(`/create_car`, formData);
+
+            toast.success('Carro cadastrado com sucesso!!!');
+
+            reset();
+            setProductPhotos([]);
+            setPhotoInsertUrl([]);
+
+        } catch (err) {
+            if (err instanceof Error) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                console.log((err as any).response?.data);
+                toast.error('Ops erro ao cadastrar carro!');
+            } else {
+                console.error("Erro desconhecido", err);
+                toast.error('Erro desconhecido ao cadastrar carro!');
             }
-        })
-
-        addDoc(collection(db, "cars"), {
-            name: data.name.toUpperCase(),
-            model: data.model,
-            whatsapp: data.whatsapp,
-            city: data.city,
-            year: data.year,
-            km: data.km,
-            price: data.price,
-            description: data.description,
-            created: new Date(),
-            owner: user?.name,
-            uid: user?.uid,
-            images: carListImages,
-        })
-            .then(() => {
-                reset();
-                setCarImages([]);
-                console.log("CADASTRADO COM SUCESSO!");
-                toast.success("Carro cadastrado com sucesso!")
-            })
-            .catch((error) => {
-                console.log(error)
-                console.log("ERRO AO CADASTRAR NO BANCO")
-            }) */
-
-
+        }
     }
+
+    function handleDeleteImage(url: string) {
+        const index = photoInsertUrl.indexOf(url);
+        if (index !== -1) {
+            const updatedPhotos = [...productPhotos];
+            const updatedUrls = [...photoInsertUrl];
+
+            updatedPhotos.splice(index, 1);
+            updatedUrls.splice(index, 1);
+
+            setProductPhotos(updatedPhotos);
+            setPhotoInsertUrl(updatedUrls);
+        }
+    }
+
+
 
     return (
         <Container>
@@ -86,9 +129,28 @@ export function New() {
                         <FiUpload size={30} color="#000" />
                     </div>
                     <div className="cursor-pointer">
-                        <input type="file" accept="image/*" className="opacity-0 curso" />
+                        <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="opacity-0 curso"
+                            onChange={handleFile}
+                        />
                     </div>
                 </button>
+
+                {photoInsertUrl && photoInsertUrl.map((url, index) => (
+                    <div key={index} className="w-full h-32 flex items-center justify-center relative">
+                        <button className="absolute" onClick={() => handleDeleteImage(url)}>
+                            <FiTrash size={28} color="#FFF" />
+                        </button>
+                        <img
+                            src={url}
+                            alt="Preview"
+                            className="rounded-lg w-full h-32 object-cover"
+                        />
+                    </div>
+                ))}
             </div>
 
             <div className="w-full bg-white p-3 rounded-lg flex flex-col sm:flex-row items-center gap-2 mt-2">
@@ -189,7 +251,7 @@ export function New() {
                         {errors.description && <p className="mb-1 text-red-500">{errors.description.message}</p>}
                     </div>
 
-                    <button type="submit" className="rounded-md bg-zinc-900 text-white font-medium">
+                    <button type="submit" className="w-full rounded-md bg-zinc-900 text-white font-medium h-10">
                         Cadastrar
                     </button>
                 </form>
