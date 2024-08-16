@@ -55,7 +55,6 @@ export function Home() {
                     console.error("Erro desconhecido", error);
                 }
             }
-
         }
         loadStoreProducts();
     }, [currentPage, filters.filter, filters.limit]);
@@ -113,11 +112,6 @@ export function Home() {
                     value={filters.filter}
                     onChange={(e) => updateFilter('filter', e.target.value)}
                 />
-                <button
-                    className="bg-red-500 h-9 px-8 rounded-lg text-white font-medium text-lg"
-                >
-                    Buscar
-                </button>
             </section>
 
             <h1 className="font-bold text-center mt-6 text-2x1 mb-4">

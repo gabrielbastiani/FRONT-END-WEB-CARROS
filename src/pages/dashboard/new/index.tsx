@@ -1,4 +1,5 @@
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useContext, useState } from "react";
+import { AuthContext } from "../../../contexts/AuthContext";
 import { FiTrash, FiUpload } from "react-icons/fi";
 import { Container } from "../../../components/container";
 import { DashboardHeader } from "../../../components/painelheader";
@@ -25,6 +26,8 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export function New() {
+
+    const { user } = useContext(AuthContext);
 
     const [productPhotos, setProductPhotos] = useState<File[]>([]);
     const [photoInsertUrl, setPhotoInsertUrl] = useState<string[]>([]);
@@ -54,6 +57,11 @@ export function New() {
 
     async function onSubmit(date: FormData) {
 
+        if (!user?.id) {
+            toast.error('Usuário não autenticado!');
+            return;
+        }
+
         if (productPhotos.length === 0) {
             toast.error('Carregue pelo menos uma imagem!');
             console.log("Carregue pelo menos uma imagem!");
@@ -73,6 +81,7 @@ export function New() {
                 formData.append('files', photo);
             });
 
+            formData.append('user_id', user.id);
             formData.append('name', date?.name);
             formData.append('model_car', date?.model);
             formData.append('year_car', date?.year);
