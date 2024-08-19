@@ -8,6 +8,7 @@ import { CarDetail } from './pages/car';
 
 import { Layout } from './components/layout';
 import { Private } from './routes/Private';
+import { IsAuth } from './routes/IsAuth';
 
 const router = createBrowserRouter([
     {
@@ -33,7 +34,7 @@ const router = createBrowserRouter([
     },
     {
         path: "/login",
-        element: <Login />
+        element: <IsAuth><Login /></IsAuth>
     },
     {
         path: "/register",
